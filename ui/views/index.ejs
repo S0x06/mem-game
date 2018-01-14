@@ -1,57 +1,416 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <%include ../statics/include/head.ejs%>
+<head>
+    <% include statics/include/head.ejs %>
+    <style type="text/css">
+        .map{
+            border-top: 1px solid darkgrey;
+            border-left: 1px solid darkgrey;
+        }
+        .card {
+            border-right: 1px solid darkgrey;
+            border-bottom: 1px solid darkgrey;
+            padding: 0;
+        }
+        .card-right {
+            /*border-right: 1px solid darkgrey;*/
+            border-bottom: 1px solid darkgrey;
+        }
+        .card-bottom {
+            border-right: 1px solid darkgrey;
+        }
+        .pic {
+            padding: 4px;
+        }
+        .pic-selected {
+            /*border: 5px #333839;*/
+        }
+    </style>
     <title>记忆训练</title>
-  </head>
-  <body>
-      <div class="container body">
-          <div class="main_container">
-              <jsp:include page="/nav"/>
-      
-              <div class="right_col" role="main">
-                  <div class="row">
-                      <div class="col-md-8 col-sm-6 col-xs-6 play-ground bg-info">
-                          <div class="x_panel">
-                              <div class="x_title">
-                                  <h2>开始</h2>
-                                  <div class="clearfix"></div>
-                              </div>
-                              <div class="x_content">
-                                  
-                              </div>
-                          </div>
-                      </div>
-                      <div class="col-md-4 col-sm-6 col-xs-6 hud bg-primary">
-                        <div class="x_panel">
-                            <!-- <div class="x_title">
-                                <h2>开始</h2>
+</head>
+<body>
+<div class="container body">
+    <div class="main_container">
+        <div class="right_col" role="main">
+            <div class="row">
+                <div class="col-md-8 col-sm-12 col-xs-12 play-ground">
+                    <div class="x_panel">
+                        <div class="x_content">
+                            <div class="x_title">
+                                <h2></h2>
                                 <div class="clearfix"></div>
-                            </div> -->
-                            <div class="x_content">
-                                
-                                <div class="row">
-                                    用户
-                                </div>
-                                
-                                <div class="row">
-                                    系统
-                                </div>
-                                
                             </div>
-                        </div>                       
-                      </div>
-                  </div>
-              </div>
-              <%include ../statics/include/footer.ejs%>
-          </div>
-      </div>
+                            <div id="map" class="container-fluid map">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 col-xs-12 hud ">
+                    <div class="x_panel">
+                        <div class="x_content">
+                            <div class="x_title">
+                                <h2>配置</h2>
+                                <div class="clearfix"></div>
+                            </div>
 
+                            <!--<div class="row">-->
+                            <!--用户-->
+                            <!--</div>-->
+                            <div>
+                                <form class="form-horizontal form-label-left">
+                                    <div class="input-group">
+                                        <div class="control-label input-group-addon">Level</div>
+                                        <select id="level" class="form-control">
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3" selected="selected">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                        </select>
+                                    </div>
+                                </form>
+                                <br>
+                                <div class="col-lg-12" style="padding: 0;">
+                                    <div class="btn btn-default btn-block" id="add_default">开始</div>
+                                </div>
+                                <div class="col-lg-12" style="padding: 0;">
+                                    <div class="btn btn-default btn-block" id="on-all">on all</div>
+                                </div>
+                                <div class="col-lg-12" style="padding: 0;">
+                                    <div class="btn btn-default btn-block" id="off-all">off all</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% include statics/include/footer.ejs %>
+    </div>
+</div>
 
+<% include statics/include/script.ejs %>
+<script>
+    $(document).ready(function () {
+        const activeCardBoundary = 2;
+        const cardActiveExpire = 1500;
+        const cardRidWaitTime = 1000;
+        var levelList
+        var baseUrl = "http://127.0.0.1:9090";
+        var activeCards;
+        var pics;
+        var map;
+        var entries;
+        var level
+        initActiveCardList();
+        initLevelList();
 
-    <%include ../statics/include/script.ejs%>
-    <script>
-      
-    </script>
-  </body>
+        $("#add_default").click(function (e) {
+            level = $("#level").val()
+
+            getNewGameMap(levelList[level - 1].wid, levelList[level - 1].len)
+        })
+
+        $("#on-all").click(function (e) {
+            e.preventDefault();
+            $(".card").each(function (index, e) {
+                if ($(e).children("img").attr("class").indexOf("empty") != -1) {
+                    return
+                }
+                // console.log(index)
+                turnOn(e)
+            })
+        })
+        $("#off-all").click(function (e) {
+            e.preventDefault();
+            $(".card").each(function () {
+                turnOff(this)
+            })
+        })
+
+        function cardClickEvent(eClassName) {
+            $("." + eClassName).off("click").click(function (e) {
+                if ($(this).children("img").attr("class").indexOf("empty") != -1) {
+                    return
+                }
+                cardClick(this)
+                // console.log("active cards :")
+                // console.log(activeCards)
+                // console.log("map :")
+                // console.log(map)
+            })
+        }
+
+        function drawMap(drawArea, row, cow, mapEntries) {
+            if (row == 0 || cow == 0) {
+                return
+            }
+            // console.log(mapEntries)
+            let mapString = ""
+            for (let i = 0; i < row; i++) {
+                let temps = ""
+                for (let j = 0; j < cow; j++) {
+                    if (12 % cow == 0) {
+                        if (i == row - 1 && j == cow - 1) {
+                            temps += "<div id='map_row" + i + "_cow" + j + "' class='col-lg-" + 12 / cow + " col-md-" + 12 / cow + " col-sm-" + 12 / cow + " col-xs-" + 12 / cow + " card card-right card-bottom'>" +
+                                "<img class='img-responsive center-block pic' src='/views/statics/pics/back.jpg'></div>"
+                        } else if (i == row - 1) {
+                            temps += "<div id='map_row" + i + "_cow" + j + "' class='col-lg-" + 12 / cow + " col-md-" + 12 / cow + " col-sm-" + 12 / cow + " col-xs-" + 12 / cow + " card card-bottom'>" +
+                                "<img class='img-responsive center-block pic' src='/views/statics/pics/back.jpg'></div>"
+                        } else if (j == cow - 1) {
+                            temps += "<div id='map_row" + i + "_cow" + j + "' class='col-lg-" + 12 / cow + " col-md-" + 12 / cow + " col-sm-" + 12 / cow + " col-xs-" + 12 / cow + " card card-right'>" +
+                                "<img class='img-responsive center-block pic' src='/views/statics/pics/back.jpg'></div>"
+                        } else {
+                            temps += "<div id='map_row" + i + "_cow" + j + "' class='col-lg-" + 12 / cow + " col-md-" + 12 / cow + " col-sm-" + 12 / cow + " col-xs-" + 12 / cow + " card'>" +
+                                "<img class='img-responsive center-block pic' src='/views/statics/pics/back.jpg'></div>"
+                        }
+                    }
+                }
+                mapString += "<div id='map_row" + i + "' class='row'>" + temps + "</div>"
+            }
+            $("#" + drawArea).empty()
+            $("#" + drawArea).append(mapString)
+
+            cardClickEvent("card")
+        }
+
+        function emptyCard(ctx) {
+            $(ctx).empty()
+            $(ctx).append("<img class='img-responsive center-block empty pic' src='/views/statics/pics/empty.jpg'>")
+        }
+
+        function turnOff(ctx) {
+            if ($(ctx).children("img").attr("class").indexOf("empty") != -1) {
+                return
+            }
+            $(ctx).empty()
+            $(ctx).append("<img class='img-responsive center-block back pic' src='/views/statics/pics/back.jpg'>")
+        }
+
+        function turnOn(ctx) {
+            if ($(ctx).children("img").attr("class").indexOf("empty") != -1) {
+                return
+            }
+            $(ctx).empty()
+            $(ctx).append("<img class='img-responsive center-block on pic-selected pic' src='/views/statics/pics/" + getPicByElement(ctx).id + ".jpg'>")
+
+            if (!checkActiveCardOverBoundary()) {
+                if (compareActiveCard()) {
+                    setTimeout(function () {
+                        deleteEntriesFromMapByActiveCards();
+                        activeCardEmpty();
+                        completeHint();
+                        console.log(map);
+                    }, cardRidWaitTime);
+                } else {
+                    setTimeout(function () {
+                        let len = activeCards.length
+                        for (let index = 0; index < len; index++) {
+                            let e = activeCards[activeCards.length - 1]
+                            turnOff(getMapEntry(e.row, e.cow))
+                            activeCardDecrease()
+                        }
+                    }, cardActiveExpire)
+                }
+            }
+        }
+
+        function getNewGameMap(row, cow) {
+            $.ajax({
+                type: "GET",
+                url: baseUrl + "/game/map",
+                crossDomain: true,
+                jsonp: "callback",
+                dataType: "jsonp",
+                data: {
+                    len: cow,
+                    wid: row
+                },
+                success: function (result) {
+                    map = result.map
+                    pics = result.pics
+                    entries = result.entries
+
+                    drawMap("map", row, cow, result)
+                },
+                error: function (e) {
+                    notie.alert({ type: 3, text: e.responseJSON.Message, stay: 1.5 })
+                }
+            });
+        }
+
+        function cardClick(ctx) {
+            if (!checkActiveCardOverBoundary()) {
+                return;
+            }
+            activeCardIncrease(ctx)
+            turnOn(ctx)
+        }
+
+        function initLevelList() {
+            levelList = new Array();
+            levelList[0] = {
+                len: 4,
+                wid: 2
+            }
+            levelList[1] = {
+                len: 4,
+                wid: 3
+            }
+            levelList[2] = {
+                len: 6,
+                wid: 3
+            }
+            levelList[3] = {
+                len: 6,
+                wid: 4
+            }
+            levelList[4] = {
+                len: 12,
+                wid: 4
+            }
+            levelList[5] = {
+                len: 12,
+                wid: 6
+            }
+            levelList[6] = {
+                len: 12,
+                wid: 8
+            }
+        }
+
+        function initActiveCardList() {
+            activeCards = new Array();
+        }
+
+        function activeCardIncrease(ctx) {
+            if (!activeCardUniqueCheck(ctx)) {
+                return
+            }
+            var e = new Object();
+            e.cow = getMapOrder(ctx, "cow");
+            e.row = getMapOrder(ctx, "row");
+            e.element = ctx;
+            activeCards[activeCards.length] = e;
+        }
+
+        function activeCardDecrease() {
+            activeCards = activeCards.slice(0, activeCards.length - 1)
+        }
+
+        function activeCardEmpty() {
+            let len = activeCards.length
+            for (let index = 0; index < len; index++) {
+                emptyCard($("#map" + "_row" + activeCards[index].row + "_cow" + activeCards[index].cow));
+            }
+            for (let index = 0; index < len; index++) {
+                activeCardDecrease()
+            }
+        }
+
+        function activeCardUniqueCheck(ctx) {
+            let cow = getMapOrder(ctx, "cow");
+            let row = getMapOrder(ctx, "row");
+
+            for (let index = 0; index < activeCards.length; index++) {
+                if (activeCards[index].row == row && activeCards[index].cow == cow) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        function checkActiveCardOverBoundary() {
+            let counter = 0
+            for (let index = 0; index < activeCards.length; index++) {
+                if (activeCards[index] != null) {
+                    counter++
+                }
+            }
+            if (counter >= activeCardBoundary) {
+                return false
+            } else {
+                return true
+            }
+        }
+
+        function getMapOrder(ctx, name) {
+            let id = $(ctx).attr("id");
+            let s = id.split("_")
+            switch (name) {
+                case "cow":
+                    return parseInt(s[2].substring(3))
+                case "row":
+                    return parseInt(s[1].substring(3))
+                default:
+                    return ""
+            }
+        }
+
+        function getMapEntry(row, cow) {
+            return $("#map_row" + row + "_cow" + cow)
+        }
+
+        function getEntryFromMapByElement(ctx) {
+            let row = getMapOrder(ctx, "row");
+            let cow = getMapOrder(ctx, "cow");
+            return getEntryFromMap(row, cow);
+        }
+
+        function getEntryFromMap(row, cow) {
+            return map[cow + row * levelList[level - 1].len];
+        }
+
+        function getPicByElement(ctx) {
+            e = getEntryFromMapByElement(ctx);
+            return getPic(e.picId)
+        }
+
+        function getPic(index) {
+            return pics[index];
+        }
+
+        function deleteEntriesFromMapByActiveCards() {
+            let len = activeCards.length
+            for (let index = 0; index < len; index++) {
+                deleteEntryFromMap(activeCards[index].row, activeCards[index].cow)
+            }
+        }
+
+        function deleteEntryFromMap(row, cow) {
+            delete map[cow + row * levelList[level - 1].len]
+        }
+
+        function compareActiveCard() {
+            let e = new Array();
+            for (let index = 0; index < activeCards.length; index++) {
+                e[index] = getEntryFromMap(activeCards[index].row, activeCards[index].cow)
+                if (e[index] == null) {
+                    return false
+                }
+                // console.log(e[index])
+            }
+
+            for (let index = 0; index < activeCards.length; index++) {
+                for (let jndex = index; jndex < activeCards.length; jndex++) {
+                    if (e[index].compareId != e[jndex].compareId) {
+                        return false
+                    }
+                }
+            }
+            return true
+        }
+
+        function completeHint() {
+            let counter = 0;
+            for (let obj in map) {
+                counter++
+            }
+            if (counter == 0){
+                notie.alert({ type: 1, text: '完成!', stay: true });
+            }
+        }
+    });
+</script>
+</body>
 </html>

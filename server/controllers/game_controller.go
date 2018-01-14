@@ -54,6 +54,6 @@ func (c GameController) GetMap() {
 		c.CustomAbort(500, NewErrMsg(err.Error()).String())
 	}
 
-	c.Data["json"] = gameMap
-	c.ServeJSON()
+	c.Data["jsonp"] = gameMap
+	c.ServeJSONP()
 }
