@@ -17,6 +17,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /data/runtime/platform/mem-game/conf/config.js:/usr/app/config.js:ro
+      - /data/runtime/platform/mem-game/statics:/usr/app/views/statics
     links:
       - server:server
     ports:
