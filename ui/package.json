@@ -2,6 +2,15 @@
   "name": "mem-game-ui",
   "version": "0.0.1",
   "description": "ui for mem-game",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": {
+    "name": "xianzhuo",
+    "email": "18777165536@163.com",
+    "url": "https://github.com/wangxianzhuo/mem-game/tree/master/ui"
+  },
   "dependencies": {
     "bootstrap": "^3.3.7",
     "ejs": "^2.5.6",
