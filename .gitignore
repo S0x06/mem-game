@@ -15,3 +15,7 @@
 
 node_modules/
 .idea
+
+mem-game-server
+mem-game-*.*
+

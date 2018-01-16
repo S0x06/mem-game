@@ -1,0 +1,25 @@
+version: '2'
+services:
+  server:
+    image: mem-game-server
+    container_name: mem-game-server
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /data/runtime/platform/mem-game/logs:/usr/app/logs
+      - /data/runtime/platform/mem-game/conf/app.conf:/usr/app/conf/app.conf:ro
+    ports:
+      - 9090:9090
+  ui:
+    image: mem-game-ui
+    container_name: mem-game-ui
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /data/runtime/platform/mem-game/conf/config.js:/usr/app/config.js:ro
+      - /data/runtime/platform/mem-game/statics:/usr/app/views/statics
+    links:
+      - server:server
+    ports:
+      - 3000:3000
+
