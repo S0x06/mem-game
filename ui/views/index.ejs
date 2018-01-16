@@ -3,25 +3,30 @@
 <head>
     <% include statics/include/head.ejs %>
     <style type="text/css">
-        .map{
+        .map {
             border-top: 1px solid darkgrey;
             border-left: 1px solid darkgrey;
         }
+
         .card {
             border-right: 1px solid darkgrey;
             border-bottom: 1px solid darkgrey;
             padding: 0;
         }
+
         .card-right {
             /*border-right: 1px solid darkgrey;*/
             border-bottom: 1px solid darkgrey;
         }
+
         .card-bottom {
             border-right: 1px solid darkgrey;
         }
+
         .pic {
             padding: 4px;
         }
+
         .pic-selected {
             /*border: 5px #333839;*/
         }
@@ -68,10 +73,15 @@
                                             <option value="5">5</option>
                                         </select>
                                     </div>
+                                    <br>
+                                    <div class="input-group">
+                                        <div class="control-label input-group-addon">翻牌统计</div>
+                                        <input id="turn-counter" class="form-control" disabled="disabled">
+                                    </div>
                                 </form>
                                 <br>
                                 <div class="col-lg-12" style="padding: 0;">
-                                    <div class="btn btn-default btn-block" id="add_default">开始</div>
+                                    <div class="btn btn-default btn-block" id="start">开始</div>
                                 </div>
                                 <div class="col-lg-12" style="padding: 0;">
                                     <div class="btn btn-default btn-block" id="on-all">on all</div>
@@ -96,19 +106,26 @@
         const cardActiveExpire = 1500;
         const cardRidWaitTime = 1000;
         var levelList
-        var baseUrl = "http://server:9090";
+        var baseUrl = "http://39.104.49.21:8001";
         var activeCards;
         var pics;
         var map;
         var entries;
-        var level
-        initActiveCardList();
-        initLevelList();
+        var level;
+        var turnCounter;
 
-        $("#add_default").click(function (e) {
+        function init() {
+            turnCounterClean();
+            initActiveCardList();
+            initLevelList();
+        }
+
+        init();
+        $("#start").click(function (e) {
             level = $("#level").val()
 
             getNewGameMap(levelList[level - 1].wid, levelList[level - 1].len)
+            turnCounterClean();
         })
 
         $("#on-all").click(function (e) {
@@ -174,6 +191,7 @@
             cardClickEvent("card")
         }
 
+        // card control
         function emptyCard(ctx) {
             $(ctx).empty()
             $(ctx).append("<img class='img-responsive center-block empty pic' src='/views/statics/pics/empty.jpg'>")
@@ -212,6 +230,7 @@
                         }
                     }, cardActiveExpire)
                 }
+                turnCount();
             }
         }
 
@@ -234,7 +253,7 @@
                     drawMap("map", row, cow, result)
                 },
                 error: function (e) {
-                    notie.alert({ type: 3, text: e.responseJSON.Message, stay: 1.5 })
+                    notie.alert({type: 3, text: e.responseJSON.Message, stay: 1.5})
                 }
             });
         }
@@ -320,6 +339,7 @@
             return true
         }
 
+        // 检查翻开的牌是否达到上限
         function checkActiveCardOverBoundary() {
             let counter = 0
             for (let index = 0; index < activeCards.length; index++) {
@@ -334,6 +354,7 @@
             }
         }
 
+        // resources control
         function getMapOrder(ctx, name) {
             let id = $(ctx).attr("id");
             let s = id.split("_")
@@ -401,14 +422,25 @@
             return true
         }
 
+        // other
         function completeHint() {
             let counter = 0;
             for (let obj in map) {
                 counter++
             }
-            if (counter == 0){
-                notie.alert({ type: 1, text: '完成!', stay: true });
+            if (counter == 0) {
+                notie.alert({type: 1, text: '完成!', stay: true});
             }
+        }
+
+        function turnCount() {
+            turnCounter++;
+            $("#turn-counter").val(turnCounter)
+        }
+
+        function turnCounterClean() {
+            turnCounter = 0;
+            $("#turn-counter").val(turnCounter)
         }
     });
 </script>
