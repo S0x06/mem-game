@@ -7,5 +7,6 @@ import (
 
 func main() {
 	beego.Router("/game/map", &controllers.GameController{}, "get:GetMap")
+	beego.Router("/user/enroll", &controllers.UserController{}, "get:Enroll")
 	beego.Run()
 }

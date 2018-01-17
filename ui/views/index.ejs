@@ -64,6 +64,11 @@
                             <div>
                                 <form class="form-horizontal form-label-left">
                                     <div class="input-group">
+                                        <div class="control-label input-group-addon">用户</div>
+                                        <input id="user" class="form-control" disabled="disabled">
+                                    </div>
+                                    <br>
+                                    <div class="input-group">
                                         <div class="control-label input-group-addon">Level</div>
                                         <select id="level" class="form-control">
                                             <option value="1">1</option>
@@ -100,17 +105,14 @@
 </div>
 
 <% include statics/include/script.ejs %>
+<script src="user.js"></script>
 <script>
     $(document).ready(function () {
         const activeCardBoundary = 2;
         const cardActiveExpire = 1500;
         const cardRidWaitTime = 1000;
         var levelList
-<<<<<<< HEAD
-        var baseUrl = "http://39.104.49.21:8001";
-=======
         var baseUrl = config.server;
->>>>>>> 6263e39e0f004b56cfa38520befc6bfcfe17fee5
         var activeCards;
         var pics;
         var map;
@@ -122,6 +124,7 @@
             turnCounterClean();
             initActiveCardList();
             initLevelList();
+            initUser("user", baseUrl + "/user/enroll")
         }
 
         init();
