@@ -8,8 +8,10 @@ function setUserInfo(name, value) {
 
 function initUser(area, url) {
     let userId = getUserInfo("id")
-    if (userId == null) {
+    let userName = getUserInfo("name")
+    if (userId == "" || userName == "") {
         let name = $("#"+ area).val()
+        console.log(name)
         return userEnroll(name, url)
     } else {
         console.log(getUserInfo("name"))
@@ -23,7 +25,7 @@ function initUser(area, url) {
 function userEnroll(name, url) {
     $.ajax({
         type: 'GET',
-        url: url,
+        url: url + "?name=" + name,
         crossDomain: true,
         jsonp: "callback",
         dataType: "jsonp",
@@ -32,14 +34,14 @@ function userEnroll(name, url) {
         },
         success: function (result) {
             console.log("user enroll success")
-            notie.alert({type:3, text: "user enroll success", stay: 1.5})
+            notie.alert({type:1, text: "user enroll success", stay: 1.5})
             // $("#"+area).val(result.name)
             setUserInfo("id", result.id)
             setUserInfo("name", result.name)
             return result.id
         },
         error: function (e) {
-            notie.alert({type:1, text: e.responseJSON.Message, stay: 1.5})
+            notie.alert({type:3, text: e.responseJSON.Message, stay: 1.5})
         }
     })
 }
