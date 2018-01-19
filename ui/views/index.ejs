@@ -65,7 +65,11 @@
                                 <form class="form-horizontal form-label-left">
                                     <div class="input-group">
                                         <div class="control-label input-group-addon">用户</div>
-                                        <input id="user" class="form-control" disabled="disabled">
+                                        <input id="user" class="form-control">
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" type="button" id="btn-login">login</button>
+                                        </span>
+                                        <!-- <div class="control-label input-group-addon btn btn-success">login</div> -->
                                     </div>
                                     <br>
                                     <div class="input-group">
@@ -119,12 +123,13 @@
         var entries;
         var level;
         var turnCounter;
+        var userId;
 
         function init() {
             turnCounterClean();
             initActiveCardList();
             initLevelList();
-            initUser("user", baseUrl + "/user/enroll")
+            userId = initUser("user", baseUrl + "/user/enroll")
         }
 
         init();
@@ -150,6 +155,10 @@
             $(".card").each(function () {
                 turnOff(this)
             })
+        })
+        $("#btn-login").click(function (e) {
+            e.preventDefault()
+            initUser("user", baseUrl + "/user/enroll")
         })
 
         function cardClickEvent(eClassName) {

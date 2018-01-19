@@ -1,35 +1,26 @@
-function getUserId() {
-    let id = window.localStorage.getItem("id");
-    if (id == null) {
-        return createUser()
-    }
-    return id
+function getUserInfo(name) {
+    return window.localStorage.getItem(name);
 }
 
-function createUser() {
-    let id = guid()
-    window.localStorage.setItem("id", id);
-    return id
-}
-
-function guid() {
-    function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-            .toString(16)
-            .substring(1);
-    }
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-        s4() + '-' + s4() + s4() + s4();
+function setUserInfo(name, value) {
+    window.localStorage.setItem(name, value)
 }
 
 function initUser(area, url) {
-    let id = getUserId()
-    $("#"+area).val(id)
-    userEnroll(id, url)
+    let userId = getUserInfo("id")
+    if (userId == null) {
+        let name = $("#"+ area).val()
+        return userEnroll(name, url)
+    } else {
+        console.log(getUserInfo("name"))
+        console.log(getUserInfo("id"))
+        $("#"+ area).val(getUserInfo("name"))
+        return getUserInfo("id")
+    }
 }
 
 // TODO: 在ui中实现相关接口，避免跨域请求
-function userEnroll(id, url) {
+function userEnroll(name, url) {
     $.ajax({
         type: 'GET',
         url: url,
@@ -37,10 +28,15 @@ function userEnroll(id, url) {
         jsonp: "callback",
         dataType: "jsonp",
         data: {
-            id:id
+            name:name
         },
         success: function (result) {
             console.log("user enroll success")
+            notie.alert({type:3, text: "user enroll success", stay: 1.5})
+            // $("#"+area).val(result.name)
+            setUserInfo("id", result.id)
+            setUserInfo("name", result.name)
+            return result.id
         },
         error: function (e) {
             notie.alert({type:1, text: e.responseJSON.Message, stay: 1.5})
