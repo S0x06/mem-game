@@ -9,7 +9,7 @@ function setUserInfo(name, value) {
 function initUser(area, url) {
     let userId = getUserInfo("id")
     let userName = getUserInfo("name")
-    if (userId == "" || userName == "") {
+    if (userId == "" || userId == null || userName == "" || userName == null) {
         let name = $("#"+ area).val()
         console.log(name)
         return userEnroll(name, url)

@@ -2,7 +2,7 @@
 
 echo "### Build project ..."
 go get github.com/emirpasic/gods/lists/arraylist
-CGO_ENABLED=0 go build -a -installsuffix cgo -o mem-game-server main.go
+go build --tags "libsqlite3 linux" -o mem-game-server main.go
 
 echo "### Build docker image ..."
 docker build -t mem-game-server:latest .
