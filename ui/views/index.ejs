@@ -233,7 +233,7 @@
                     setTimeout(function () {
                         deleteEntriesFromMapByActiveCards();
                         activeCardEmpty();
-                        completeHint();
+                        conpleteCheck();
                         console.log(map);
                     }, cardRidWaitTime);
                 } else {
@@ -439,13 +439,31 @@
         }
 
         // other
-        function completeHint() {
+        function conpleteCheck() {
             let counter = 0;
             for (let obj in map) {
                 counter++
             }
             if (counter == 0) {
                 notie.alert({type: 1, text: '完成!', stay: true});
+                $.ajax({
+                    url: baseUrl + "/user/fact",
+                    type: "GET",
+                    data: {
+                        userId: userId,
+                        name: "score_" + (Date.parse(new Date()) / 1000),
+                        value: '{\"level\":'+level+',\"score\":'+ turnCounter+'}'
+                    },
+                    dataType: "jsonp",
+                    crossDomain: true,
+                    jsonp: "callback",
+                    success: function(){
+                        console.log("score save success")
+                    },
+                    error: function(){
+                        console.log("score save failed")
+                    }
+                })
             }
         }
 

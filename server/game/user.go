@@ -81,9 +81,9 @@ func addUser(id string) (User, error) {
 	}, nil
 }
 
-func getUserFacts(userId string) ([]UserFact, error) {
+func getUserFacts(userID string) ([]UserFact, error) {
 	facts := []UserFact{}
-	rows, err := db.Query("select id, name, value, created_time, updated_time from user_facts where user_id = ?", userId)
+	rows, err := db.Query("select id, name, value, created_time, updated_time from user_facts where user_id = ?", userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user facts error: %v", err)
 	}
@@ -103,7 +103,7 @@ func getUserFacts(userId string) ([]UserFact, error) {
 
 		facts = append(facts, UserFact{
 			ID:          id,
-			UserID:      userId,
+			UserID:      userID,
 			Name:        name,
 			Value:       value,
 			CreatedTime: createdTime,
@@ -115,6 +115,49 @@ func getUserFacts(userId string) ([]UserFact, error) {
 		return nil, fmt.Errorf("get user facts error: %v", err)
 	}
 	return facts, nil
+}
+
+func getUserFactByUserIdAndName(userID, name string) (UserFact, error) {
+	row := db.QueryRow("select id, value, created_time, updated_time from user_facts where user_id = ? and name = ?", userID, name)
+	var id string
+	var value string
+	var createdTime time.Time
+	var updatedTime time.Time
+	err := row.Scan(&id, &value, &createdTime, &updatedTime)
+	if err != nil {
+		return UserFact{
+			ID:          id,
+			UserID:      userID,
+			Name:        name,
+			Value:       value,
+			CreatedTime: createdTime,
+			UpdatedTime: updatedTime,
+		}, fmt.Errorf("get user fact error: %v", err)
+	}
+	return UserFact{
+		ID:          id,
+		UserID:      userID,
+		Name:        name,
+		Value:       value,
+		CreatedTime: createdTime,
+		UpdatedTime: updatedTime,
+	}, nil
+}
+
+func AddFact(userID, name, value string) error {
+	fact, err := getUserFactByUserIdAndName(userID, name)
+	if err == nil {
+		err = updateUserFact(fact.ID, value)
+		if err != nil {
+			return fmt.Errorf("add fact error: %v", err)
+		}
+	} else {
+		_, err = addUserFact(uuid.NewV4().String(), userID, name, value, time.Now())
+		if err != nil {
+			return fmt.Errorf("add fact error: %v", err)
+		}
+	}
+	return nil
 }
 
 func addUserFact(id, userID, name, value string, createdTime time.Time) (UserFact, error) {

@@ -5,7 +5,7 @@ import (
 )
 
 type ErrMessage struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func NewErrMsg(msg string) ErrMessage {
